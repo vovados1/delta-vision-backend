@@ -20,7 +20,7 @@ const consumer = kafkaClient.consumer({ groupId: "delta-vision-backend-consumer"
 await consumer.connect()
 await consumer.subscribe({ topic: KAFKA_TOPIC })
 
-await consumer.run({
+consumer.run({
   async eachMessage({ message }) {
     const key = message.key?.toString()
     if (!key) return
