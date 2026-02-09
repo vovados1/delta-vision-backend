@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { upgradeWebSocket } from "hono/bun"
 import { KafkaClient } from "../clients/KafkaClient"
 import { WSClient } from "../clients/WSClient"
+import { DataController } from "../controllers/Data"
 
 export const dataRoute = new Hono()
 
@@ -14,20 +15,5 @@ const kafkaClient = new KafkaClient(
 
 const wsClient = new WSClient(kafkaClient)
 
-dataRoute.get(
-  "/",
-  upgradeWebSocket(() => {
-    return {
-      onOpen(evt, ws) {
-        wsClient.open(ws)
-      },
-      onMessage(event, ws) {
-        const msg = JSON.parse(event.data.toString())
-        wsClient.handleMessage(msg, ws)
-      },
-      onClose(_, ws) {
-        wsClient.close(ws)
-      },
-    }
-  })
-)
+dataRoute.get("/stream", upgradeWebSocket(DataController.stream(wsClient)))
+dataRoute.get("/meta", DataController.meta(wsClient))

@@ -25,6 +25,23 @@ export class WSClient {
 
   constructor(protected readonly kafkaClient: KafkaClient) {}
 
+  get metadata() {
+    return this.kafkaClient.allKeys.reduce<{ exchanges: string[]; pairs: string[] }>(
+      (acc, key) => {
+        const { exchange, pair } = separateKey(key)
+
+        if (!acc.exchanges.includes(exchange)) acc.exchanges.push(exchange)
+        if (!acc.pairs.includes(pair)) acc.pairs.push(pair)
+
+        return acc
+      },
+      {
+        exchanges: [],
+        pairs: [],
+      }
+    )
+  }
+
   open(ws: WSContext) {
     const wsRaw = ws.raw as ServerWebSocket
 

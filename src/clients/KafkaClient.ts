@@ -2,10 +2,13 @@ import { Kafka, type Consumer } from "kafkajs"
 import type { KafkaPayload } from "../types"
 
 export class KafkaClient {
-  private readonly client: Kafka | null
-  private readonly consumer: Consumer | null
+  protected readonly client: Kafka | null
+  protected readonly consumer: Consumer | null
+
+  private keys = new Set<string>()
+
   // { [key]: [[id, fn], ...] }
-  private subscriptions: Map<string, [string, (payload: KafkaPayload) => unknown][]> = new Map()
+  protected subscriptions: Map<string, [string, (payload: KafkaPayload) => unknown][]> = new Map()
 
   constructor(
     private readonly clientId: string,
@@ -16,6 +19,10 @@ export class KafkaClient {
     this.client = new Kafka({ clientId, brokers })
     this.consumer = this.client.consumer({ groupId })
     this.init()
+  }
+
+  get allKeys() {
+    return [...this.keys]
   }
 
   protected async init() {
@@ -29,6 +36,8 @@ export class KafkaClient {
           const key = message.key?.toString()
           const value = message.value?.toString()
           if (!key || !value) return
+
+          if (!this.keys.has(key)) this.keys.add(key)
 
           const subscribers = this.subscriptions.get(key)
           if (!subscribers) return
